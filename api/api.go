@@ -71,15 +71,13 @@ func handlePutKey(w http.ResponseWriter, req *http.Request) {
 		log.Fatal(err)
 	}
 
-	var kv kvdb.KvPair = kvdb.KvPair{Key: key, Value: string(bodyBytes)}
-
-	err = kvdb.Put(dbId, kv)
+	err = kvdb.Put(dbId, []byte(key), bodyBytes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	log.Println("Received PUT " + kv.Key + " at " + time.Now().UTC().Format(time.RFC3339Nano))
+	log.Println("Received PUT " + key + " at " + time.Now().UTC().Format(time.RFC3339Nano))
 	fmt.Fprintf(w, "ok")
 }
 
@@ -95,7 +93,7 @@ func handleGetKey(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "key missing")
 	}
 
-	data, err := kvdb.Get(dbId, key)
+	data, err := kvdb.Get(dbId, []byte(key))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
