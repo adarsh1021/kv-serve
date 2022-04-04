@@ -3,9 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"time"
 
-	"github.com/adarsh1021/kv-serve/datastore"
+	"github.com/adarsh1021/kv-serve/kvdb"
 	"github.com/gorilla/mux"
 )
 
@@ -13,37 +16,26 @@ func StartServer() {
 	mux := mux.NewRouter()
 
 	mux.HandleFunc("/", healthcheck)
-	mux.HandleFunc("/store", handleCreateStore).Methods("POST")
-	mux.HandleFunc("/store", handleListStores).Methods("GET")
-	mux.HandleFunc("/store/{store}", handleStorePut).Methods("PUT", "POST") // GET, PUT/POST, DELETE
-	mux.HandleFunc("/store/{store}/{key}", handleStoreGet).Methods("GET")
+	mux.HandleFunc("/db", handleListDbs).Methods("GET")
+	mux.HandleFunc("/db/{dbId}", handleCreateDb).Methods("POST")
+	mux.HandleFunc("/db/{dbId}/{key}", handleGetKey).Methods("GET")
+	mux.HandleFunc("/db/{dbId}/{key}", handlePutKey).Methods("PUT", "POST")
 
-	http.ListenAndServe(":8080", mux)
+	http.ListenAndServe(":9090", mux)
 }
 
 func healthcheck(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "ok")
 }
 
-func handleCreateStore(w http.ResponseWriter, req *http.Request) {
-	stores, err := datastore.ListStores()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func handleCreateDb(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	dbId, ok := vars["dbId"]
+	if !ok {
+		fmt.Fprintf(w, "dbId missing")
 	}
 
-	json.NewEncoder(w).Encode(stores)
-}
-
-func handleListStores(w http.ResponseWriter, req *http.Request) {
-	var newStore datastore.Store
-	err := json.NewDecoder(req.Body).Decode(&newStore)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	_, err = datastore.CreateOrOpen(newStore)
+	_, err := kvdb.CreateOrOpen(dbId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -52,35 +44,58 @@ func handleListStores(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "Key value store created")
 }
 
-func handleStorePut(w http.ResponseWriter, req *http.Request) {
+func handleListDbs(w http.ResponseWriter, req *http.Request) {
+	dbs, err := kvdb.ListDbs()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	json.NewEncoder(w).Encode(dbs)
+}
+
+func handlePutKey(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	storeName, ok := vars["store"]
+	dbId, ok := vars["dbId"]
 	if !ok {
-		fmt.Fprintf(w, "storeName missing")
+		fmt.Fprintf(w, "dbId missing")
 	}
 
-	var kv datastore.KeyValuePair
-	err := json.NewDecoder(req.Body).Decode(&kv)
+	key, ok := vars["key"]
+	if !ok {
+		fmt.Fprintf(w, "key missing")
+	}
+
+	bodyBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var kv kvdb.KvPair = kvdb.KvPair{Key: key, Value: string(bodyBytes)}
+
+	err = kvdb.Put(dbId, kv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = datastore.Put(datastore.Store{Name: storeName}, kv)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+	log.Println("Received PUT " + kv.Key + " at " + time.Now().UTC().Format(time.RFC3339Nano))
 	fmt.Fprintf(w, "ok")
 }
 
-func handleStoreGet(w http.ResponseWriter, req *http.Request) {
+func handleGetKey(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	storeName, _ := vars["store"]
-	key := vars["key"]
+	dbId, ok := vars["dbId"]
+	if !ok {
+		fmt.Fprintf(w, "dbId missing")
+	}
 
-	data, err := datastore.Get(datastore.Store{Name: storeName}, key)
+	key, ok := vars["key"]
+	if !ok {
+		fmt.Fprintf(w, "key missing")
+	}
+
+	data, err := kvdb.Get(dbId, key)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
