@@ -9,7 +9,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-const DATA_PATH string = "/Users/adarsh/projects/kv-serve/data"
+const DATA_PATH string = "/data"
 
 var gc gcache.Cache
 
