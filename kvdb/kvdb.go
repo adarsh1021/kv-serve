@@ -5,13 +5,15 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/bluele/gcache"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type KvDb struct {
-	Name string `json:"name"`
-	Ref  interface{}
-}
+// type KvDb struct {
+// 	Name string `json:"name"`
+// 	Id   string `json:"id"`
+// 	Ref  *leveldb.DB
+// }
 
 type KvPair struct {
 	Key   string `json:"key"`
@@ -20,24 +22,23 @@ type KvPair struct {
 
 const DATA_PATH string = "/Users/adarsh/projects/kv-serve/data"
 
-var db *leveldb.DB
+var gc gcache.Cache = gcache.New(100).LRU().Build()
+
+func SetupDb() {
+
+}
 
 func CreateOrOpen(dbId string) (*leveldb.DB, error) {
-	dbPath := filepath.FromSlash(DATA_PATH + "/" + dbId)
-
-	db, err := leveldb.OpenFile(dbPath, nil)
+	var db *leveldb.DB
+	i, err := gc.Get(dbId)
 	if err != nil {
-		log.Panic(err)
+		dbPath := filepath.FromSlash(DATA_PATH + "/" + dbId)
+		db, err = leveldb.OpenFile(dbPath, nil)
+		gc.Set(dbId, db)
+	} else {
+		db = i.(*leveldb.DB)
 	}
-	defer db.Close()
 
-	return db, err
-}
-
-func Open(dbId string) (*leveldb.DB, error) {
-	storePath := filepath.FromSlash(DATA_PATH + "/" + dbId)
-
-	db, err := leveldb.OpenFile(storePath, nil)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -45,29 +46,34 @@ func Open(dbId string) (*leveldb.DB, error) {
 	return db, err
 }
 
-func ListDbs() ([]KvDb, error) {
+func ListDbs() ([]string, error) {
 	files, err := ioutil.ReadDir(DATA_PATH)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
 
-	var dbs []KvDb
+	var dbs []string
 	for _, file := range files {
-		dbs = append(dbs, KvDb{Name: file.Name()})
+		dbs = append(dbs, file.Name())
 	}
 
 	return dbs, nil
 }
 
 func Put(dbId string, kv KvPair) error {
-	db, _ := Open(dbId)
-	defer db.Close()
+	// var i interface{}
+	i, _ := gc.Get(dbId)
+	db := i.(*leveldb.DB)
+
 	return db.Put([]byte(kv.Key), []byte(kv.Value), nil)
 }
 
 func Get(dbId string, key string) ([]byte, error) {
-	db, _ := Open(dbId)
-	defer db.Close()
+	// db, _ := Open(dbId)
+	// defer db.Close()
+	i, _ := gc.Get(dbId)
+	db := i.(*leveldb.DB)
+
 	return db.Get([]byte(key), nil)
 }
