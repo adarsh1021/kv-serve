@@ -99,5 +99,5 @@ func handleGetKey(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, string(data))
+	fmt.Fprint(w, string(data))
 }
