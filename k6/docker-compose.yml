@@ -1,0 +1,10 @@
+version: '3.9'
+
+services:
+  k6:
+    image: loadimpact/k6:latest
+    ports:
+      - "6565:6565"
+    volumes:
+      - ./scripts:/scripts
+    command: ["k6", "run", "/scripts"]
