@@ -6,13 +6,14 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/adarsh1021/kv-serve/kvdb"
 	"github.com/gorilla/mux"
 )
 
-func StartServer() {
+func StartServer(port int) {
+	log.Println("Starting server...")
+
 	mux := mux.NewRouter()
 
 	mux.HandleFunc("/", healthcheck)
@@ -21,7 +22,9 @@ func StartServer() {
 	mux.HandleFunc("/db/{dbId}/{key}", handleGetKey).Methods("GET")
 	mux.HandleFunc("/db/{dbId}/{key}", handlePutKey).Methods("PUT", "POST")
 
-	http.ListenAndServe(":9090", mux)
+	log.Println("Server ready...")
+
+	http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 }
 
 func healthcheck(w http.ResponseWriter, req *http.Request) {
@@ -41,7 +44,7 @@ func handleCreateDb(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "Key value store created")
+	fmt.Fprintf(w, "kvdb created")
 }
 
 func handleListDbs(w http.ResponseWriter, req *http.Request) {
@@ -77,7 +80,7 @@ func handlePutKey(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Println("Received PUT " + key + " at " + time.Now().UTC().Format(time.RFC3339Nano))
+	// log.Println("Received PUT " + key + " at " + time.Now().UTC().Format(time.RFC3339Nano))
 	fmt.Fprintf(w, "ok")
 }
 

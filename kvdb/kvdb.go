@@ -9,19 +9,22 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-const DATA_PATH string = "/data"
+var DATA_DIR string = "/data"
 
 var gc gcache.Cache
 
-func SetupDb() {
-	gc = gcache.New(100).LRU().Build()
+func SetupDb(dataDir string, maxDbCacheEntries int) {
+	log.Println("Starting db...")
+	DATA_DIR = dataDir
+	gc = gcache.New(maxDbCacheEntries).LRU().Build()
 	warmUpCache()
+	log.Println("Ready")
 }
 
 func warmUpCache() {
 	dbIds, _ := ListDbs()
 	for _, dbId := range dbIds {
-		dbPath := filepath.FromSlash(DATA_PATH + "/" + dbId)
+		dbPath := filepath.FromSlash(DATA_DIR + "/" + dbId)
 		db, err := leveldb.OpenFile(dbPath, nil)
 		if err != nil {
 			log.Panic(err)
@@ -30,7 +33,8 @@ func warmUpCache() {
 	}
 }
 
-func OnExit() {
+func OnExitCleanup() {
+	log.Println("Cleaning up...")
 	// Cleanup cache items
 	cache := gc.GetALL(false)
 	for _, i := range cache {
@@ -40,7 +44,7 @@ func OnExit() {
 }
 
 func open(dbId string) (*leveldb.DB, error) {
-	dbPath := filepath.FromSlash(DATA_PATH + "/" + dbId)
+	dbPath := filepath.FromSlash(DATA_DIR + "/" + dbId)
 	return leveldb.OpenFile(dbPath, nil)
 }
 
@@ -65,7 +69,7 @@ func CreateOrOpen(dbId string) (*leveldb.DB, error) {
 }
 
 func ListDbs() ([]string, error) {
-	files, err := ioutil.ReadDir(DATA_PATH)
+	files, err := ioutil.ReadDir(DATA_DIR)
 	if err != nil {
 		log.Panic(err)
 		return nil, err
