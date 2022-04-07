@@ -44,7 +44,7 @@ func handleCreateDb(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "kvdb created")
+	fmt.Fprintf(w, dbId+" created")
 }
 
 func handleListDbs(w http.ResponseWriter, req *http.Request) {
