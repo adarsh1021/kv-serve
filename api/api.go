@@ -1,15 +1,22 @@
 package api
 
 import (
+	context "context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 
 	"github.com/adarsh1021/kv-serve/kvdb"
 	"github.com/gorilla/mux"
+	grpc "google.golang.org/grpc"
 )
+
+type server struct {
+	UnimplementedKvServiceServer
+}
 
 func StartServer(port int) {
 	log.Println("Starting server...")
@@ -25,6 +32,20 @@ func StartServer(port int) {
 	log.Println("Server ready...")
 
 	http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
+}
+
+func StartGrpcServer(port int) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	RegisterKvServiceServer(s, &server{})
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
 
 func healthcheck(w http.ResponseWriter, req *http.Request) {
@@ -103,4 +124,12 @@ func handleGetKey(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Fprint(w, string(data))
+}
+
+func (s *server) CreteDb(ctx context.Context, in *CreateDbRequest) (*CreateDbResponse, error) {
+	return &CreateDbResponse{}, nil
+}
+
+func (s *server) GetKey(ctx context.Context, in *GetKeyRequest) (*GetKeyResponse, error) {
+	return &GetKeyResponse{Key: "Hello", Value: []byte("000000")}, nil
 }
