@@ -16,7 +16,14 @@ var gc gcache.Cache
 func SetupDb(dataDir string, maxDbCacheEntries int) {
 	log.Println("Starting db...")
 	DATA_DIR = dataDir
-	gc = gcache.New(maxDbCacheEntries).LRU().Build()
+	gc = gcache.New(maxDbCacheEntries).
+		LRU().
+		EvictedFunc(func(key, value interface{}) {
+			// Close the db reference on eviction
+			db := value.(*leveldb.DB)
+			db.Close()
+		}).
+		Build()
 	warmUpCache()
 	log.Println("Ready")
 }
