@@ -40,6 +40,7 @@ func main() {
 	log.Println("Max entries in db cache: " + fmt.Sprint(maxDbCacheEntries))
 
 	kvdb.SetupDb(dataDir, maxDbCacheEntries)
-	api.StartServer(port)
+	// api.StartServer(port)
+	api.StartGrpcServer(port)
 	kvdb.OnExitCleanup()
 }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+option go_package = "github.com/adarsh1021/kv-serve/api";
+
+service KvService {
+  rpc CreteDb(CreateDbRequest) returns (CreateDbResponse);
+  rpc PutKey(PutKeyRequest) returns (PutKeyResponse);
+  rpc GetKey(GetKeyRequest) returns (GetKeyResponse);
+}
+
+message CreateDbRequest { string dbId = 1; }
+message CreateDbResponse {}
+
+message PutKeyRequest {
+  string key = 1;
+  bytes value = 2;
+}
+message PutKeyResponse {}
+
+message GetKeyRequest { string key = 1; }
+message GetKeyResponse {
+  string key = 1;
+  bytes value = 2;
+}
