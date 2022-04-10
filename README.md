@@ -13,6 +13,21 @@ KVServe is a persistent key-value database as a service based on [LevelDB](https
 
 ## Usage
 
+To build:
+
+```
+go build -o kv-serve
+```
+
+Options:
+
+- --data-dir (-d)  
+  The path to store LevelDB files.
+- --max-db-cache-entries (-c)  
+  The maximum number of open db pointers at a time.
+- --port (-p)  
+  The port to run the HTTP server on.
+
 Create a new key-value database `my-db`:
 
 ```
