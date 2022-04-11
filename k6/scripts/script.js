@@ -20,18 +20,20 @@ function makeid(length) {
 
 export const options = {
   vus: 20,
-  duration: "15s",
+  duration: "10s",
 };
 
 export default function () {
   var data = [];
   // Perform SET
-  for (var i = 0; i < 1; i++) {
-    const s = `db/${dbs[getRandomInt(5)]}/${makeid(8)}`;
-    data.push(s);
-    http.post(`http://host.docker.internal:9090/${s}`, s);
-  }
-
+  // for (var i = 0; i < 1; i++) {
+  //   const s = `db/${dbs[getRandomInt(5)]}/${makeid(8)}`;
+  //   data.push(s);
+  //   http.post(`http://host.docker.internal:9090/${s}`, s);
+  // }
+  const k = `db/test`;
+  http.post(`http://host.docker.internal:9090/${k}`, k);
+  http.get(`http://host.docker.internal:9090/${k}`);
   // Perform GET
-  data.forEach((d) => http.get(`http://host.docker.internal:9090/${d}`));
+  // data.forEach((d) => http.get(`http://host.docker.internal:9090/${d}`));
 }
