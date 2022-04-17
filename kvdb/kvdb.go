@@ -9,7 +9,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-var DATA_DIR string = "/data"
+var DATA_DIR string
 
 var gc gcache.Cache
 
